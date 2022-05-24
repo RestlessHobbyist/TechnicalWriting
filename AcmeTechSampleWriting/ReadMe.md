@@ -18,7 +18,6 @@ Mock Internal Integration Documentation (ReadMe.md)
 * Lead Client Relations - Bugsly Rabbot
 * Technical SME - Don Quail
 <br />
-<br />
 
 ## **Integrations Bundle Summary**
 This integration serves as a bi-directional data flow betweeen the University and `AcmeTech Solutions`. \
@@ -28,8 +27,11 @@ It contains two integrations:
 
 Summarized below
 
+---
+<br />
+
 ## **University Population Biodemo**
-### Integration Summary
+### **Integration Summary**
 This integration calls the `PeopleSoft` queries: `UNIVERSITY_GREEK_LIFE` & `UNIVERSITY_STUDENTS_BIODEMO`, processes the data to filter out irrelevant data, and merges the remaining into a `CSV` file for drop off on AcmeTech Solution's `SFTP` server.
 
 ### Technical Information
@@ -39,7 +41,7 @@ This integration calls the `PeopleSoft` queries: `UNIVERSITY_GREEK_LIFE` & `UNIV
 
 * Remove all non-active Greek life members
 
-* Calls `PSQuery`: `UNIVERSITY_STUDENTS_BIODEMO`
+* Call `PSQuery`: `UNIVERSITY_STUDENTS_BIODEMO`
 
 * Remove all non-Greek life members
 
@@ -53,13 +55,11 @@ This integration calls the `PeopleSoft` queries: `UNIVERSITY_GREEK_LIFE` & `UNIV
 
 ### Known Issue(s)
 * No known/common issues with the integration at this time.
-
 ---
-<br />
 <br />
 
 ## **Roster Refresh**
-### Integration Summary
+### **Integration Summary**
 This integration serves the purpose of updating the University's `Greek Life` roster for current and active members. It calls a few of `AcmeTech Solution`'s API endpoints to compile data into a file for import into PeopleSoft.
 
 ### Technical Information
@@ -67,73 +67,55 @@ This integration serves the purpose of updating the University's `Greek Life` ro
 
 * Call `AcmeTech Solution` API V2 for a list of Greek organizations
 
-* Call `AcmeTech Solution` API V3  for a list of Greek organizations
+* Call `AcmeTech Solution` API V3 for each org to get positions in that org
 
-* Calls PSQuery: `UNIVERSITY_STUDENTS_BIODEMO`
+* Merge all rows on student ID, only keeping a list of `positions` for that ID
 
-* Remove all non-Greek life members
+* Note that some `positions` are office held `positions`, others are their `member` status, others yet are `live-in` status
 
-* Perform a union join of the data  
+* Align `positions` to mapping requirements and create `CSV`
 
-* Create a `CSV` file called `University_Students_Biodemo.CSV`
+* Drop off to University `SFTP` server for Greek roster update
 
-* Archive a copy of the `CSV` file to the volume mount dedicated for this integration (see `uni-greek_life-pvc`)
-
-* Send the `CSV` to AcmeTech Solutions `SFTP` server
-
+### Known Issue(s)
+* Vendor has announced that they will be retiring V2 of the API "sometime" in the future. This means we will need to point to a V3 equivalent of that call once they have created it, making changes as necessary to the Endpoint URI and message body parsing.
+---
+<br />
 
 ## Manual Triggers
 
 | Job                                                 | Trigger
 |-----------------------------------------------------| ------------------------
-| Manually call PSQuery and drop the Engagement file  | Send any message to `direct:Trigger.queryBiodemoDatafromCS`
-| Manually trigger file resend (timestamped to the second) | Send any message to `seda:Trigger.sororityFraternityLifeUpload`
+| University Population Biodemo | Send any message to `seda:Trigger.Uni_Pop_Biodemo`
+| Roster Refresh | Send any message to `seda:Trigger.Greek_Roster_Refresh`
 
 
 ## Common Problems
 
-**Problem:** For unknown reasons we sometimes receive this error while reading OMCS SFTP.
+**Problem:** The PSQuery endpoint for the `University Population Biodemo` run, sometimes gets an influx of requests and cannot handle our call immediately.
 
-**Immediate Resolution:**  Manually retrigger job named `Do the thing`.
+**Immediate Resolution:**  If issue is observed during business hours we can manually trigger the job and hope the endpoint has the resources to handle our request
 
-**Possible Long-Term Resolution:** Engage OMCS to diagnose the issue on their end.  Failing that,
-add more aggressive retry policies to SFTP calls.
-
-**Problem:** We were unable find sufficient basketweaving materials data in Campus Solutions to complete the nightly batch job.
-
-**Resolution:** Inform PS Admins they need to load more wicker data and get back to us, so we can re-trigger job `loadBasketData`.
-
-**Possible Long-Term Resolution:** Proactively detect the error and send alerts to an email list for relevant staff.
+**Possible Long-Term Resolution:** We implement a retry policy for up to an hour. If within an hour of retries we cannot get a response we fail and log an issue reaching the PSQuery endpoint.
 
 ## OPENSHIFT DEPLOYMENT ARTIFACTS
 
 | Artifact     | Name
 |--------------| ------------------------
-| Config Map   | `ilstu-engage-config`
+| Config Map   | `ilstu-greekchapters-config`
 | Config Map   | `ilstu-logging-config`
-| Secret       | `ilstu-ideacenter-sftp`
-| Volume Mount | `ilstu-sait-pvc`
+| Secret       | `ilstu-acmetech-sftp`
+| Volume Mount | `ilstu-unigreekroster-pvc`
 
-*NOTE:* IDEA (CampusLabs's Course Evaluation Tool) ergo the `ilstu-ideacenter-sftp` secret is shared
+<br />
+
 
 **Deployment Diagram**
 ~~~~
-WorkStation ->  gitlab      -> Openshift Dev  (intd) [Manual approval]
-                            -> Openshift Test (intt) [Manual approval]
-              (if tagged)   -> Openshift Prod (pint) [Manual approval]
+WorkStation ->  gitlab      -> Openshift Dev  (dev) [Manual approval]
+                            -> Openshift Test (test) [Manual approval]
+              (if tagged)   -> Openshift Prod (prod) [Manual approval]
 ~~~~
 Deployment of this program does require the above configmaps and secrets to be available in the deployment namespace beforehand.
 
-[Deployment Procedure](https://docs.illinoisstate.edu/x/oAE3Aw)
-
-
-## Primary Users
-- Justin Smith
-- Adam Listek
-
-## Project Team
-- ESB Developer: Kaiser Ahmed
-- PS Developer: Jamie Turner 
-- Project Manager: Dave Hyland
-
-## OPENSHIFT
+[Deployment Procedure](http://example.com/)
