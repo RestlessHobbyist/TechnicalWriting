@@ -102,10 +102,10 @@ This integration serves the purpose of updating the University's `Greek Life` ro
 
 | Artifact     | Name
 |--------------| ------------------------
-| Config Map   | `ilstu-greekchapters-config`
-| Config Map   | `ilstu-logging-config`
-| Secret       | `ilstu-acmetech-sftp`
-| Volume Mount | `ilstu-unigreekroster-pvc`
+| Config Map   | `uni-greekchapters-config`
+| Config Map   | `uni-logging-config`
+| Secret       | `uni-acmetech-sftp`
+| Volume Mount | `uni-unigreekroster-pvc`
 
 <br />
 
